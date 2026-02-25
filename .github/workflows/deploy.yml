@@ -1,0 +1,22 @@
+name: Deploy (Sepolia)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Deploy contract
+        env:
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+        run: npm run deploy:sepolia
