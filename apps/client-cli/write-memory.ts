@@ -35,9 +35,17 @@ async function pinToIpfsPinata(blob: Buffer): Promise<{ cid: string; pointer: st
     throw new Error('Need PINATA_JWT or PINATA_API_KEY + PINATA_API_SECRET');
   }
 
-  const resp = await axios.post(url, form, { headers, maxBodyLength: Infinity });
-  const cid = resp.data.IpfsHash as string;
-  return { cid, pointer: `ipfs://${cid}` };
+  try {
+    const resp = await axios.post(url, form, { headers, maxBodyLength: Infinity });
+    const cid = resp.data.IpfsHash as string;
+    return { cid, pointer: `ipfs://${cid}` };
+  } catch (e: any) {
+    const status = e?.response?.status;
+    const data = e?.response?.data;
+    // Do not print secrets; just the Pinata error payload/status.
+    console.error('Pinata upload failed', { status, data });
+    throw e;
+  }
 }
 
 function deriveKeyFromPassphrase(passphrase: string): Buffer {
