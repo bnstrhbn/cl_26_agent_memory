@@ -2,7 +2,7 @@
 
 ## Executive summary
 
-This project is a minimal, hackathon-ready proof-of-concept for **consent-aware, tamper-evident agent memory**.
+**Agents forget. Chains don’t.** This project is a minimal, hackathon-ready proof-of-concept for **consent-aware, tamper-evident agent memory**.
 
 - **Plaintext memories** are encrypted off-chain.
 - **Ciphertext** is stored in durable storage (IPFS via Pinata).
