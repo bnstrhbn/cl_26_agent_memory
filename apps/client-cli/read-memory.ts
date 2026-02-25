@@ -14,8 +14,10 @@ function requireEnv(name: string): string {
   return v;
 }
 
-function deriveKeyFromPassphrase(passphrase: string): Buffer {
-  return crypto.createHash('sha256').update(passphrase, 'utf8').digest();
+function deriveKeyFromPassphrase(passphrase: string, salt: Buffer): Buffer {
+  // Use scrypt for passphrase->key derivation (MVP hardening vs raw SHA-256).
+  // Params chosen for quick CI; can be increased for production.
+  return crypto.scryptSync(passphrase, salt, 32, { N: 1 << 14, r: 8, p: 1 });
 }
 
 function decryptAesGcm(blob: Buffer, key: Buffer, aad: Buffer): Buffer {
@@ -70,7 +72,8 @@ async function main() {
     'hex'
   );
 
-  const key = deriveKeyFromPassphrase(passphrase);
+  const salt = Buffer.from(`cl_26_agent_memory:${ledgerAddress.toLowerCase()}:${String(rec.agentId).toLowerCase()}`, 'utf8');
+  const key = deriveKeyFromPassphrase(passphrase, salt);
   const pt = decryptAesGcm(blob, key, aad);
   process.stdout.write(pt);
 }

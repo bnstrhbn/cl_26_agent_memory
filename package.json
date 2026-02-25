@@ -8,7 +8,7 @@
     "test": "hardhat test",
     "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
     "allow-writer:sepolia": "hardhat run scripts/allow-writer.ts --network sepolia",
-    "e2e:ci": "node scripts/ci-e2e.js"
+    "e2e:ci": "node scripts/ci-e2e.cjs"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.8",

@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import axios from 'axios';
 import FormData from 'form-data';
-import { Contract, JsonRpcProvider, Wallet, keccak256, toUtf8Bytes, ZeroHash } from 'ethers';
+import { Contract, JsonRpcProvider, Wallet, keccak256, toUtf8Bytes, ZeroHash, Interface } from 'ethers';
 
 function requireEnv(name: string): string {
   const v = process.env[name];
@@ -48,9 +48,10 @@ async function pinToIpfsPinata(blob: Buffer): Promise<{ cid: string; pointer: st
   }
 }
 
-function deriveKeyFromPassphrase(passphrase: string): Buffer {
-  // MVP: SHA-256(passphrase) (documented). For production use scrypt/argon2.
-  return crypto.createHash('sha256').update(passphrase, 'utf8').digest();
+function deriveKeyFromPassphrase(passphrase: string, salt: Buffer): Buffer {
+  // Use scrypt for passphrase->key derivation (MVP hardening vs raw SHA-256).
+  // Params chosen for quick CI; can be increased for production.
+  return crypto.scryptSync(passphrase, salt, 32, { N: 1 << 14, r: 8, p: 1 });
 }
 
 function encryptAesGcm(plaintext: Buffer, key: Buffer, aad: Buffer): Buffer {
@@ -71,10 +72,11 @@ async function main() {
   }
 
   const plaintext = fs.readFileSync(filePath);
-  const key = deriveKeyFromPassphrase(passphrase);
+  const ledgerAddress = requireEnv('MEMORY_LEDGER_ADDRESS');
+  const salt = Buffer.from(`cl_26_agent_memory:${ledgerAddress.toLowerCase()}:${agentId.toLowerCase()}`, 'utf8');
+  const key = deriveKeyFromPassphrase(passphrase, salt);
 
   const chainId = Number(process.env.CHAIN_ID || 11155111); // Sepolia default
-  const ledgerAddress = requireEnv('MEMORY_LEDGER_ADDRESS');
   const schemaVersion = Number(process.env.SCHEMA_VERSION || 1);
 
   // AAD binds ciphertext to (chainId, contractAddress, agentId, schemaVersion)
@@ -109,6 +111,27 @@ async function main() {
   console.log('commit tx:', tx.hash);
   const receipt = await tx.wait();
   console.log('confirmed in block:', receipt.blockNumber);
+
+  // Try to extract record id from MemoryCommitted event
+  try {
+    const eventAbi = [
+      'event MemoryCommitted(uint256 indexed id, address indexed agentId, address indexed writer, bytes32 contentHash, string pointer, uint32 schemaVersion, uint64 createdAt, bytes32 metaHash)'
+    ];
+    const iface = new Interface(eventAbi);
+    for (const log of receipt.logs) {
+      try {
+        const parsed = iface.parseLog({ topics: log.topics as any, data: log.data as any });
+        if (parsed?.name === 'MemoryCommitted') {
+          console.log('recordId:', parsed.args.id.toString());
+          break;
+        }
+      } catch {
+        // ignore non-matching logs
+      }
+    }
+  } catch {
+    // best-effort only
+  }
 }
 
 main().catch((e) => {
