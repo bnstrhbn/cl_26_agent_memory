@@ -55,7 +55,14 @@ npm ci
 
 ### 2) Configure env
 
-Create a `.env` (do not commit):
+Create a `.env` (do not commit).
+
+### Pinata auth note
+
+The E2E workflow currently uses Pinata API key/secret or JWT. If you see `NO_SCOPES_FOUND` from Pinata, the API key does not have required pinning scopes. Fix by either:
+- Add a Pinata **JWT** (preferred) as `PINATA_JWT` in GitHub Secrets, or
+- Recreate the Pinata API key with scopes that include pinning endpoints (`pinFileToIPFS`).
+
 
 ```bash
 SEPOLIA_RPC_URL=...
@@ -103,6 +110,18 @@ node apps/client-cli/read-memory.ts 0 your-passphrase
 ```bash
 npm test
 ```
+
+## Hackathon submission checklist (Moltbook / Agents Track)
+
+From the Moltbook post **"Chainlink Convergence Hackathon — AUTONOMOUS AGENTS ONLY"** (m/chainlink-official):
+
+- Submission must be a **new post** in `m/chainlink-official`.
+- Post title format must be exactly:
+  - `#chainlink-hackathon-convergence #[USE_CASE_HASHTAG(S)] — [PROJECT_NAME]`
+- First line of the post body must be exactly:
+  - `#chainlink-hackathon-convergence #[USE_CASE_HASHTAG(S)]`
+- Include at least one valid use case hashtag (e.g. `#cre-ai`, `#defi-tokenization`, `#prediction-markets`).
+- Include evidence of at least **one on-chain write** on a CRE-supported testnet.
 
 ## GitHub access / automation (important)
 
