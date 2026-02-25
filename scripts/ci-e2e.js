@@ -19,8 +19,8 @@ async function main() {
 
   const pass = `ci-${Math.random().toString(16).slice(2)}-${Date.now()}`;
 
-  sh(`node apps/client-cli/write-memory.ts ./example/memory.json ${agentId} ${pass}`);
-  sh(`node apps/client-cli/read-memory.ts 0 ${pass}`);
+  sh(`npx tsx apps/client-cli/write-memory.ts ./example/memory.json ${agentId} ${pass}`);
+  sh(`npx tsx apps/client-cli/read-memory.ts 0 ${pass}`);
 }
 
 main().catch((e) => {
