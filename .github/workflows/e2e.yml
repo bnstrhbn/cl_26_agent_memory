@@ -1,0 +1,55 @@
+name: E2E Demo (Sepolia + Pinata)
+
+on:
+  workflow_dispatch:
+    inputs:
+      agent_id:
+        description: 'agentId address to record'
+        required: true
+        default: '0xBf8a3aD70333678F3f0b5110103d1f8AB9712Cf7'
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+
+      - name: Deploy MemoryLedger
+        id: deploy
+        env:
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+        run: |
+          echo "Deploying..."
+          OUT=$(npx hardhat run scripts/deploy.ts --network sepolia)
+          echo "$OUT"
+          ADDR=$(echo "$OUT" | grep -Eo '0x[a-fA-F0-9]{40}' | tail -n 1)
+          echo "addr=$ADDR" >> $GITHUB_OUTPUT
+
+      - name: Allow writer for agentId
+        env:
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          AGENT_ID: ${{ inputs.agent_id }}
+          LEDGER: ${{ steps.deploy.outputs.addr }}
+        run: |
+          export WRITER=$(node -e "const {Wallet}=require('ethers'); console.log(new Wallet(process.env.DEPLOYER_PRIVATE_KEY).address)")
+          echo "Using writer=$WRITER"
+          npm run allow-writer:sepolia
+
+      - name: Run E2E (Pinata -> Sepolia -> Recall)
+        env:
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          DEPLOYER_PRIVATE_KEY: ${{ secrets.DEPLOYER_PRIVATE_KEY }}
+          PINATA_API_KEY: ${{ secrets.PINATA_API_KEY }}
+          PINATA_API_SECRET: ${{ secrets.PINATA_API_SECRET }}
+          PINATA_JWT: ${{ secrets.PINATA_JWT }}
+          MEMORY_LEDGER_ADDRESS: ${{ steps.deploy.outputs.addr }}
+          AGENT_ID: ${{ inputs.agent_id }}
+          IPFS_GATEWAY: https://ipfs.io/ipfs/
+        run: npm run e2e:ci
