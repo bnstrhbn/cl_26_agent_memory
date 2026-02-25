@@ -51,5 +51,5 @@ jobs:
           PINATA_JWT: ${{ secrets.PINATA_JWT }}
           MEMORY_LEDGER_ADDRESS: ${{ steps.deploy.outputs.addr }}
           AGENT_ID: ${{ inputs.agent_id }}
-          IPFS_GATEWAY: https://ipfs.io/ipfs/
+          IPFS_GATEWAY: https://gateway.pinata.cloud/ipfs/
         run: npm run e2e:ci

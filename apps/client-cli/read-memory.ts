@@ -51,7 +51,7 @@ async function main() {
   if (!pointer.startsWith('ipfs://')) throw new Error(`Unsupported pointer: ${pointer}`);
 
   const cid = pointer.slice('ipfs://'.length);
-  const gateway = process.env.IPFS_GATEWAY || 'https://ipfs.io/ipfs/';
+  const gateway = process.env.IPFS_GATEWAY || 'https://gateway.pinata.cloud/ipfs/';
   const url = gateway.endsWith('/') ? gateway + cid : gateway + '/' + cid;
 
   const resp = await axios.get(url, { responseType: 'arraybuffer' });
